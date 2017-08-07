@@ -20,10 +20,10 @@
         var timerRef;
 
         var startmenu = new Image (615,615);
-        startmenu.src = "file:///C:/Users/bdhar_000/OneDrive/JavaScript/snake/startmenu.png";
+        startmenu.src = "https://github.com/profbrandon/games/blob/master/snake/startmenu.png";
 
         var gameover = new Image (615, 615);
-        gameover.src = "file:///C:/Users/bdhar_000/OneDrive/JavaScript/snake/gameover.png";
+        gameover.src = "https://github.com/profbrandon/games/blob/master/snake/gameover.png";
 
         startmenu.onload = function () {
             ctx.drawImage (startmenu, 0, 0);
@@ -32,11 +32,7 @@
         canvas.onclick = function (event) {
             setup ();
             clearInterval (timerRef);
-            timerRef = setInterval (loop, 75);
-        }
-
-        function loop () {
-            game ();
+            timerRef = setInterval (game, 75);
         }
 
         function setup () {
@@ -50,8 +46,6 @@
 
         function moveSnake () {
             var h = head ();
-
-            const delta = 0.75
 
             switch (direction) {
                 case "Up":
@@ -92,7 +86,7 @@
             ctx.fillRect (0, 0, 615, 615)
             if (head ().X < 0 || head ().X > 40 || head ().Y < 0 || head ().Y > 40) {
                 ctx.drawImage (gameover, 0, 0);
-                loadStats ("file:///C:/Users/bdhar_000/OneDrive/JavaScript/snake/highscores.xml");
+                loadStats ("https://github.com/profbrandon/games/blob/master/snake/highscores.xml");
                 clearTimeout (loop)
             } else if (head ().X == appleX && head ().Y == appleY) {
                 ++slength;
