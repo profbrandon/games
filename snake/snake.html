@@ -32,11 +32,7 @@
         canvas.onclick = function (event) {
             setup ();
             clearInterval (timerRef);
-            timerRef = setInterval (loop, 75);
-        }
-
-        function loop () {
-            game ();
+            timerRef = setInterval (game, 75);
         }
 
         function setup () {
@@ -90,8 +86,7 @@
             ctx.fillRect (0, 0, 615, 615)
             if (head ().X < 0 || head ().X > 40 || head ().Y < 0 || head ().Y > 40) {
                 ctx.drawImage (gameover, 0, 0);
-                loadStats ("https://github.com/profbrandon/games/blob/master/snake/highscores.xml");
-                clearTimeout (loop)
+                clearTimeout (loop);
             } else if (head ().X == appleX && head ().Y == appleY) {
                 ++slength;
                 score += 1000;
