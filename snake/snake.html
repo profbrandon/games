@@ -86,7 +86,6 @@
             ctx.fillRect (0, 0, 615, 615)
             if (head ().X < 0 || head ().X > 40 || head ().Y < 0 || head ().Y > 40) {
                 ctx.drawImage (gameover, 0, 0);
-                clearTimeout (loop);
             } else if (head ().X == appleX && head ().Y == appleY) {
                 ++slength;
                 score += 1000;
