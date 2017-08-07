@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+    <canvas id="canvas" style="background:black" width="615" height="615">
+    </canvas><br />
+
+    <p id="length">Length:  1</p>
+    <p id="score">Score:  0</p>
+    
+    <script>
+        var canvas = document.getElementById ("canvas");
+        var ctx = canvas.getContext("2d");
+
+        var slength;
+        var score;
+        var direction;
+        var snake;
+        var appleX;
+        var appleY;
+
+        var timerRef;
+
+        var startmenu = new Image (615,615);
+        startmenu.src = "file:///C:/Users/bdhar_000/OneDrive/JavaScript/snake/startmenu.png";
+
+        var gameover = new Image (615, 615);
+        gameover.src = "file:///C:/Users/bdhar_000/OneDrive/JavaScript/snake/gameover.png";
+
+        startmenu.onload = function () {
+            ctx.drawImage (startmenu, 0, 0);
+        }
+
+        canvas.onclick = function (event) {
+            setup ();
+            clearInterval (timerRef);
+            timerRef = setInterval (loop, 75);
+        }
+
+        function loop () {
+            game ();
+        }
+
+        function setup () {
+            slength = 1;
+            score = 0;
+            direction = "Up";
+            snake = [{X: 21, Y: 21, section: 0}]
+            appleX = (Math.floor (Math.random () * 41));
+            appleY = (Math.floor (Math.random () * 41));
+        }
+
+        function moveSnake () {
+            var h = head ();
+
+            const delta = 0.75
+
+            switch (direction) {
+                case "Up":
+                    prepSnake ();
+                    snake.push ({X: h.X, Y: h.Y - 1, section: 0});
+                    break;
+                case "Down":
+                    prepSnake ();
+                    snake.push ({X: h.X, Y: h.Y + 1, section: 0});
+                    break;
+                case "Left":
+                    prepSnake ();
+                    snake.push ({X: h.X - 1, Y: h.Y, section: 0});
+                    break;
+                case "Right":
+                    prepSnake ();
+                    snake.push ({X: h.X + 1, Y: h.Y, section: 0});
+                    break;
+            }
+        }
+
+        function prepSnake () {
+            snake.forEach(function(elem) {
+                ++elem.section;
+            }, this);
+
+            if (snake[0].section === slength) {
+                snake.shift ();
+            }
+        }
+
+        function head () {
+            return snake[snake.length - 1];
+        }
+
+        function game () {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect (0, 0, 615, 615)
+            if (head ().X < 0 || head ().X > 40 || head ().Y < 0 || head ().Y > 40) {
+                ctx.drawImage (gameover, 0, 0);
+                loadStats ("file:///C:/Users/bdhar_000/OneDrive/JavaScript/snake/highscores.xml");
+                clearTimeout (loop)
+            } else if (head ().X == appleX && head ().Y == appleY) {
+                ++slength;
+                score += 1000;
+
+                document.getElementById ("length").innerHTML = "Length:  " + slength;
+                document.getElementById ("score").innerHTML = "Score:  " + score;
+
+                appleX = (Math.floor (Math.random () * 41));
+                appleY = (Math.floor (Math.random () * 41));
+            }
+            handleCollision ();
+            moveSnake ();
+            drawSnake ("#00FF00");
+            drawSquare ("#FF0000", appleX, appleY);
+        }
+
+        function handleCollision () {
+            for (i = snake.length - 2; i >= 0; --i) {
+                if (head ().X === snake[i].X && head ().Y === snake[i].Y) {
+                    slength = snake[i].section;
+                    document.getElementById ('length').innerHTML = "Length:  " + slength;
+                    for (l = 0; l < slength; ++l) {
+                        snake.shift ();
+                        score -= 100;
+                    }
+                    document.getElementById ('score').innerHTML = "Score:  " + score;
+                }
+            }
+        }
+
+        function drawSnake (color) {
+            snake.forEach(function(elem) {
+                drawSquare (color, elem.X, elem.Y);
+            }, this);
+        }
+
+        function drawSquare (color, posx, posy) {
+            ctx.fillStyle = color;
+            ctx.fillRect (posx * 15, posy * 15, 15, 15);
+        }
+
+        document.addEventListener ('keydown', function (e) {
+            switch (e.keyCode) {
+                case 38: // Up
+                    direction = "Up";
+                    break;
+                case 40: // Down
+                    direction = "Down";
+                    break;
+                case 39: // Right
+                    direction = "Right";
+                    break;
+                case 37: // Left
+                    direction = "Left";
+                    break;
+            }
+        })
+
+        function loadStats (file) {
+            return;
+        }
+
+    </script>
+</html>
