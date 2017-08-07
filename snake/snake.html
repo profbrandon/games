@@ -32,7 +32,11 @@
         canvas.onclick = function (event) {
             setup ();
             clearInterval (timerRef);
-            timerRef = setInterval (game, 75);
+            timerRef = setInterval (loop, 75);
+        }
+
+        function loop () {
+            game ();
         }
 
         function setup () {
