@@ -6,6 +6,8 @@
     <p id="length">Length:  1</p>
     <p id="score">Score:  0</p>
     
+    <input id="gamertag" type="text" hidden>
+
     <script>
         var canvas = document.getElementById ("canvas");
         var ctx = canvas.getContext("2d");
@@ -40,10 +42,12 @@
         }
 
         function setup () {
+            document.getElementById ("length").innerHTML = "Length:  " + 1;
+            document.getElementById ("score").innerHTML = "Score:  " + 0;
             ingame = true;
             slength = 1;
             score = 0;
-            direction = "Up";
+            direction = "null";
             snake = [{X: 21, Y: 21, section: 0}]
             appleX = (Math.floor (Math.random () * 41));
             appleY = (Math.floor (Math.random () * 41));
@@ -69,6 +73,8 @@
                     prepSnake ();
                     snake.push ({X: h.X + 1, Y: h.Y, section: 0});
                     break;
+                case "null":
+                    return;
             }
         }
 
@@ -77,7 +83,7 @@
                 ++elem.section;
             }, this);
 
-            if (snake[0].section === slength) {
+            if (snake[0].section >= slength) {
                 snake.shift ();
             }
         }
@@ -89,10 +95,11 @@
         function game () {
             ctx.fillStyle = "#000000";
             ctx.fillRect (0, 0, 615, 615)
-            if (head ().X < 0 || head ().X > 40 || head ().Y < 0 || head ().Y > 40) {
+            if (!ingame) 
                 ctx.drawImage (gameover, 0, 0);
+            else if (head ().X < 0 || head ().X > 40 || head ().Y < 0 || head ().Y > 40)
                 ingame = false;
-            } else if (head ().X == appleX && head ().Y == appleY) {
+            else if (head ().X == appleX && head ().Y == appleY) {
                 ++slength;
                 score += 1000;
 
@@ -113,7 +120,7 @@
                 if (head ().X === snake[i].X && head ().Y === snake[i].Y) {
                     slength = snake[i].section;
                     document.getElementById ('length').innerHTML = "Length:  " + slength;
-                    for (l = 0; l < slength; ++l) {
+                    for (l = slength; l < snake.length; ++l) {
                         snake.shift ();
                         score -= 100;
                     }
