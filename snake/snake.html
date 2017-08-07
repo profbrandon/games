@@ -17,12 +17,14 @@
         var appleX;
         var appleY;
 
+        var ingame;
+
         var timerRef;
 
         var startmenu = new Image (615,615);
         startmenu.src = "https://profbrandon.github.io/games/snake/startmenu.png";
 
-        var gameover = new Image (615, 615);
+        var gameover = new Image (615,615);
         gameover.src = "https://profbrandon.github.io/games/snake/gameover.png";
 
         startmenu.onload = function () {
@@ -30,12 +32,15 @@
         }
 
         canvas.onclick = function (event) {
+            if (ingame) return;
+
             setup ();
             clearInterval (timerRef);
             timerRef = setInterval (game, 75);
         }
 
         function setup () {
+            ingame = true;
             slength = 1;
             score = 0;
             direction = "Up";
@@ -86,6 +91,7 @@
             ctx.fillRect (0, 0, 615, 615)
             if (head ().X < 0 || head ().X > 40 || head ().Y < 0 || head ().Y > 40) {
                 ctx.drawImage (gameover, 0, 0);
+                ingame = false;
             } else if (head ().X == appleX && head ().Y == appleY) {
                 ++slength;
                 score += 1000;
@@ -128,6 +134,8 @@
         }
 
         document.addEventListener ('keydown', function (e) {
+            if (!ingame) return;
+
             switch (e.keyCode) {
                 case 38: // Up
                     direction = "Up";
