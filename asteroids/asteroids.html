@@ -1,0 +1,246 @@
+<!DOCTYPE HTML>
+<html>
+    <canvas id="display" style="background:black" width="600" height="600">
+    </canvas>
+    
+    <script>
+
+		var width = window.innerWidth - 20;
+		var height = window.innerHeight - 20;
+
+		var screen = document.getElementById('display');
+		screen.width = width;
+		screen.height = height;
+        var ctx    = screen.getContext ('2d');
+        var ingame = false;
+        var delta  = 0.6;
+        var timerRef;
+		var lazers = [];
+		var asteroids = [];
+
+		var shippic = new Image(34, 36);
+		shippic.src = "file:///C:/Users/bdhar_000/Desktop/github/games/asteroids/shipblue.png";
+
+		var astpic = new Image(50, 50);
+		astpic.src = "file:///C:/Users/bdhar_000/Desktop/github/games/asteroids/asteroid1.png";
+
+        function Vector (x, y){
+            this.x = x;
+            this.y = y;
+        }
+
+        function add (v1, v2) {
+            return new Vector ( v1.x + v2.x
+                              , v1.y + v2.y );
+        }
+
+        function dot (v1, v2) {
+            return v1.x * v2.x + v1.y * v2.y;
+        }
+
+        function length (v) {
+            return Math.sqrt (dot (v, v));
+        }
+
+        function scale (v, c) {
+            return new Vector (v.x * c, v.y * c);
+        }
+
+        function normalize (v) {
+            return scale (v, 1 / length (v));
+        }
+
+        function randVect (max) {
+            var v = new Vector (Math.random () * 2 - 1, Math.random () * 2 - 1);
+            return scale (v, Math.random () * max)
+        }
+
+        function rotate (v, angle) {
+            var x = Math.cos (angle) * v.x - Math.sin (angle) * v.y;
+            var y = Math.sin (angle) * v.x + Math.cos (angle) * v.y;
+            return new Vector (x, y);
+        }
+
+        function Ship ( color
+                      , position
+                      , velocity
+                      , direction
+                      , acceleration
+                      , angularSpeed ) {
+            this.color = color;
+            this.pos = position;
+            this.vel = velocity;
+            this.dir = normalize (direction);
+            this.acl = acceleration;
+            this.asp = angularSpeed;
+        }
+
+        function Lazer ( color
+                       , position
+                       , velocity
+                       , strength ) {
+            this.color = color;
+            this.pos   = position;
+            this.vel   = velocity;
+            this.strength = strength;
+        }
+
+        function Asteroid ( position
+                          , velocity
+                          , size ) {
+            this.pos  = position;
+            this.vel  = velocity;
+            this.size = size;
+            this.hp   = 100;
+        }
+
+        function drawShip (ship) {
+            var angle = Math.acos (dot (new Vector (0, -1), ship.dir));
+            if (ship.dir.x < 0) 
+                angle = -angle;
+            ctx.strokeStyle = ship.color;
+            ctx.translate (ship.pos.x, ship.pos.y)
+            ctx.rotate (angle)
+			ctx.beginPath();
+			ctx.drawImage(shippic, -17, -18)
+            ctx.closePath ();
+            ctx.stroke ();
+            ctx.rotate (-angle);
+            ctx.translate (-ship.pos.x, -ship.pos.y);
+        }
+
+        function drawLazer (lazer) {
+            var angle = Math.acos (dot (new Vector (0, -1), normalize (lazer.vel)));
+            if (lazer.vel.x < 0)
+                angle = -angle;
+            ctx.strokeStyle = lazer.color;
+            ctx.globalAlpha = lazer.strength / 100;
+            ctx.translate (lazer.pos.x, lazer.pos.y)
+            ctx.rotate (angle)
+            ctx.beginPath ();
+            ctx.moveTo (0, -4);
+            ctx.lineTo (0, 4);
+            ctx.closePath ();
+            ctx.stroke ();
+            ctx.rotate (-angle);
+            ctx.translate (-lazer.pos.x, -lazer.pos.y);
+            ctx.globalAlpha = 1;
+        }
+
+        function drawLazers (ls) {
+            ls.forEach(function(element) {
+                drawLazer (element);    
+            }, this);
+        }
+
+		function drawAsteroid (ast) {
+			ctx.translate(ship.pos.x, ship.pos.y);
+			ctx.beginPath();
+			ctx.drawImage(shippic, -25, -25)
+			ctx.closePath();
+			ctx.stroke();
+			ctx.translate(-ship.pos.x, -ship.pos.y);
+		}
+
+		function drawAsteroids(as) {
+	
+		}
+
+        function legalize (max, val) {
+			if (val < 0)
+				return val + max + 5;
+			else if (val > max)
+				return val % max + 5;
+            else 
+                return val;
+        }
+
+        function updateShip (ship) {
+            var p = add (ship.pos, add (scale (ship.vel, delta), scale (ship.acl, delta * delta / 2)));
+            ship.pos = new Vector (legalize (width, p.x), legalize (height, p.y));
+            ship.vel = add (scale (ship.vel, 0.999), scale (ship.acl, delta));
+            ship.dir = rotate (ship.dir, ship.asp * delta);
+        }
+
+        function updateLazer (lazer) {
+            var p = add (lazer.pos, scale (lazer.vel, delta));
+            lazer.pos = new Vector (legalize (width, p.x), legalize (height, p.y));
+            --lazer.strength;
+        }
+
+        function updateLazers ( ls) {
+            ls.forEach(function(element) {
+                if (element.strength == 0)
+                    lazers.shift;
+                else updateLazer (element);
+            }, this);
+        }
+
+        var ship0 = new Ship ( "#00FFFF"
+                             , new Vector (width / 2, height / 2)
+                             , new Vector (0, 0)
+                             , new Vector (0, -1)
+                             , new Vector (0, 0)
+                             , 0
+                             );
+        
+        screen.onclick = function (event) {
+            if (ingame) return;
+
+            ingame = true;
+            clearInterval (timerRef);
+            timerRef = setInterval (game, 20);
+        }
+
+        function game () {
+            ctx.fillStyle = "#000000";
+			ctx.fillRect(0, 0, width, height);
+            updateShip (ship0);
+            updateLazers (lazers);
+            drawShip (ship0);
+            drawLazers (lazers);
+        }
+
+        document.addEventListener ('keydown', function (e) { 
+            if (!ingame) return;
+
+            switch (e.keyCode) {
+                case 38: // Up
+                    ship0.acl = scale (ship0.dir, delta);
+                    break;
+                case 40: // Down
+                    ship0.acl = scale (ship0.dir, -delta);
+                    break;
+                case 39: // Right
+                    ship0.asp = 0.1;
+                    break;
+                case 37: // Left
+                    ship0.asp = -0.1;
+                    break;
+				case 32:
+					l = new Lazer("#FF0000", add(ship0.pos, scale (ship0.dir, 18)), scale(ship0.dir, 5 + length(ship0.vel)), 100);
+                    lazers.push (l);      
+            }
+        })
+
+        document.addEventListener ('keyup', function (e) {
+            if (!ingame) return;
+
+            switch (e.keyCode) {
+                case 38: // Up
+                    ship0.acl = new Vector (0, 0);
+                    break;
+                case 40: // Down
+                    ship0.acl = new Vector (0, 0);
+                    break;
+                case 39: // Right
+                    ship0.asp = 0;
+                    break;
+                case 37: // Left
+                    ship0.asp = 0;
+                    break;
+            }
+        })
+
+    </script>
+</html>
