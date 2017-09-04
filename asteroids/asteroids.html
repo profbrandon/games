@@ -147,10 +147,10 @@
 		}
 
         function legalize (max, val) {
-			if (val < 0)
+			if (val < -5)
 				return val + max + 5;
-			else if (val > max)
-				return val % max + 5;
+			else if (val > max + 5)
+				return val % max - 5;
             else 
                 return val;
         }
