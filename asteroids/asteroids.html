@@ -114,7 +114,7 @@
             if (lazer.vel.x < 0)
                 angle = -angle;
             ctx.strokeStyle = lazer.color;
-            ctx.globalAlpha = lazer.strength / 100;
+            ctx.globalAlpha = Math.sqrt (lazer.strength / 100);
             ctx.translate (lazer.pos.x, lazer.pos.y)
             ctx.rotate (angle)
             ctx.beginPath ();
@@ -170,7 +170,7 @@
 
         function updateLazers ( ls) {
             ls.forEach(function(element) {
-                if (element.strength == 0)
+                if (element.strength < 1)
                     lazers.shift;
                 else updateLazer (element);
             }, this);
@@ -217,7 +217,7 @@
                 case 37: // Left
                     ship0.asp = -0.1;
                     break;
-				case 32:
+				case 32: // Spacebar
 					l = new Lazer("#FF0000", add(ship0.pos, scale (ship0.dir, 18)), scale(ship0.dir, 5 + length(ship0.vel)), 100);
                     lazers.push (l);      
             }
