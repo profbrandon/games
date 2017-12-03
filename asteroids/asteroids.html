@@ -22,7 +22,7 @@
 		shippic.src = "https://profbrandon.github.io/games/asteroids/shipblue.png";
 
 		var astpic = new Image(50, 50);
-		astpic.src = "file:///C:/Users/bdhar_000/Desktop/github/games/asteroids/asteroid1.png";
+		//astpic.src = "file:///C:/Users/bdhar_000/Desktop/github/games/asteroids/asteroid1.png";
 
         function Vector (x, y){
             this.x = x;
@@ -207,6 +207,7 @@
             switch (e.keyCode) {
                 case 38: // Up
                     ship0.acl = scale (ship0.dir, delta);
+                    shippic.src = "https://profbrandon.github.io/games/asteroids/shipblue2.png";
                     break;
                 case 40: // Down
                     ship0.acl = scale (ship0.dir, -delta);
@@ -229,6 +230,7 @@
             switch (e.keyCode) {
                 case 38: // Up
                     ship0.acl = new Vector (0, 0);
+                    shippic.src = "https://profbrandon.github.io/games/asteroids/shipblue.png";
                     break;
                 case 40: // Down
                     ship0.acl = new Vector (0, 0);
