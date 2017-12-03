@@ -5,24 +5,27 @@
     
     <script>
 
-		var width = window.innerWidth - 20;
+		var width  = window.innerWidth - 20;
 		var height = window.innerHeight - 20;
-
 		var screen = document.getElementById('display');
-		screen.width = width;
+
+		screen.width  = width;
 		screen.height = height;
-        var ctx    = screen.getContext ('2d');
-        var ingame = false;
-        var delta  = 0.6;
-        var timerRef;
-		var lazers = [];
+
+        var ctx       = screen.getContext ('2d');
+        var ingame    = false;
+        var delta     = 0.6;
+		var lazers    = [];
 		var asteroids = [];
+        var timerRef;
 
 		var shippic = new Image(34, 36);
 		shippic.src = "https://profbrandon.github.io/games/asteroids/shipblue.png";
 
 		var astpic = new Image(50, 50);
 		//astpic.src = "file:///C:/Users/bdhar_000/Desktop/github/games/asteroids/asteroid1.png";
+
+
 
         function Vector (x, y){
             this.x = x;
@@ -65,6 +68,9 @@
             return new Vector (x, y);
         }
 
+
+
+
         function Ship ( color
                       , position
                       , velocity
@@ -94,6 +100,8 @@
             this.size = size;
             this.hp   = 100;
         }
+
+
 
         function drawShip (ship) {
             var angle = Math.acos (dot (new Vector (0, -1), ship.dir));
@@ -147,6 +155,9 @@
 	
 		}
 
+
+
+
         function legalize (max, val) {
 			if (val < -5)
 				return val + max + 5;
@@ -155,6 +166,9 @@
             else 
                 return val;
         }
+
+
+
 
         function updateShip (ship) {
             var p = add (ship.pos, add (scale (ship.vel, delta), scale (ship.acl, delta * delta / 2)));
@@ -193,6 +207,9 @@
             timerRef = setInterval (game, 20);
         }
 
+
+
+
         function game () {
             ctx.fillStyle = "#000000";
 			ctx.fillRect(0, 0, width, height);
@@ -201,6 +218,9 @@
             drawShip (ship0);
             drawLazers (lazers);
         }
+
+
+        let canshoot = true;
 
         document.addEventListener ('keydown', function (e) { 
             if (!ingame) return;
@@ -222,8 +242,9 @@
 				case 32: // Spacebar
 					l = new Lazer("#00AABA"
                                  , add(ship0.pos, scale (ship0.dir, 18))
-                                 , add (scale (ship0.dir, 15), scale (ship0.dir, dot (ship0.dir, ship0.vel)))
+                                 , add (scale (ship0.dir, 12), scale (ship0.dir, dot (ship0.dir, ship0.vel)))
                                  , 100);
+                    canshoot = false;
                     lazers.push (l);      
             }
         })
@@ -244,6 +265,9 @@
                     break;
                 case 37: // Left
                     ship0.asp = 0;
+                    break;
+                case 32:
+                    canshoot = true;
                     break;
             }
         })
