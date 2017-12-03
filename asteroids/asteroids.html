@@ -34,6 +34,10 @@
                               , v1.y + v2.y );
         }
 
+        function sub (v1, v2) {
+            return new Vector (v1.x - v2.x, v1.y - v2.y);
+        }
+
         function dot (v1, v2) {
             return v1.x * v2.x + v1.y * v2.y;
         }
@@ -75,10 +79,7 @@
             this.asp = angularSpeed;
         }
 
-        function Lazer ( color
-                       , position
-                       , velocity
-                       , strength ) {
+        function Lazer ( color, position, velocity, strength ) {
             this.color = color;
             this.pos   = position;
             this.vel   = velocity;
@@ -219,7 +220,10 @@
                     ship0.asp = -0.1;
                     break;
 				case 32: // Spacebar
-					l = new Lazer("#00AABA", add(ship0.pos, scale (ship0.dir, 18)), scale(ship0.dir, 5 + length(ship0.vel)), 100);
+					l = new Lazer("#00AABA"
+                                 , add(ship0.pos, scale (ship0.dir, 18))
+                                 , add (scale(ship0.dir, 5 + length(ship0.vel)), ship0.vel)
+                                 , 100);
                     lazers.push (l);      
             }
         })
