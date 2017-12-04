@@ -19,6 +19,10 @@
 		var asteroids = [];
         var timerRef;
 
+        var score = 0;
+
+        ctx.lineWidth = 1;
+
 		var shippic = new Image(34, 36);
 		shippic.src = "https://profbrandon.github.io/games/asteroids/shipblue.png";
 
@@ -59,7 +63,7 @@
 
         function randVect (max) {
             var v = new Vector (Math.random () * 2 - 1, Math.random () * 2 - 1);
-            return scale (v, Math.random () * max)
+            return scale (v, Math.random () * max);
         }
 
         function rotate (v, angle) {
@@ -67,6 +71,10 @@
             var y = Math.sin (angle) * v.x + Math.cos (angle) * v.y;
             return new Vector (x, y);
         }
+
+        function distance (p1, p2) {
+            return length (sub (p1, p2));
+        };
 
 
 
@@ -83,7 +91,17 @@
             this.dir = normalize (direction);
             this.acl = acceleration;
             this.asp = angularSpeed;
+            this.hp  = 100;
         }
+
+        var ship0 = new Ship ( "#00FFFF"
+                             , new Vector (width / 2, height / 2)
+                             , new Vector (0, 0)
+                             , new Vector (0, -1)
+                             , new Vector (0, 0)
+                             , 0
+                             );
+        
 
         function Lazer ( color, position, velocity, strength ) {
             this.color = color;
@@ -94,14 +112,30 @@
 
         function Asteroid ( position
                           , velocity
-                          , size ) {
-            this.pos  = position;
-            this.vel  = velocity;
-            this.size = size;
-            this.hp   = 100;
+                          , radius ) {
+            this.pos    = position;
+            this.vel    = velocity;
+            this.radius = radius;
+            this.hp     = 5 * radius;
         }
 
 
+
+        function drawHPBar (vOffset, width, height, pos, percent) {
+            /*ctx.strokeStyle = "#555555";
+
+            ctx.beginPath ();
+            ctx.rect (pos.x - 1, pos.y + vOffset - 1, width + 2, height + 2)
+            ctx.closePath ();
+            ctx.stroke ();*/
+
+            ctx.fillStyle = "#00FF00";
+
+            ctx.beginPath ();
+            ctx.rect (pos.x, pos.y + vOffset, width * percent, height)
+            ctx.closePath ();
+            ctx.fill ();
+        };
 
         function drawShip (ship) {
             var angle = Math.acos (dot (new Vector (0, -1), ship.dir));
@@ -111,11 +145,18 @@
             ctx.translate (ship.pos.x, ship.pos.y)
             ctx.rotate (angle)
 			ctx.beginPath();
-			ctx.drawImage(shippic, -17, -18)
+			ctx.drawImage(shippic, -17, -20)
             ctx.closePath ();
             ctx.stroke ();
             ctx.rotate (-angle);
             ctx.translate (-ship.pos.x, -ship.pos.y);
+
+            if (ship.hp != 100)
+                drawHPBar (30
+                          , 26
+                          , 3
+                          , sub (ship.pos, new Vector (13, 0))
+                          , ship.hp / 100);
         }
 
         function drawLazer (lazer) {
@@ -123,7 +164,7 @@
             if (lazer.vel.x < 0)
                 angle = -angle;
             ctx.strokeStyle = lazer.color;
-            ctx.globalAlpha = Math.sqrt (lazer.strength / 100);
+            ctx.globalAlpha = Math.pow (lazer.strength / 100, 0.4);
             ctx.translate (lazer.pos.x, lazer.pos.y)
             ctx.rotate (angle)
             ctx.beginPath ();
@@ -143,17 +184,34 @@
         }
 
 		function drawAsteroid (ast) {
-			ctx.translate(ship.pos.x, ship.pos.y);
+            ctx.fillStyle = "#AAAAAA";
+            ctx.strokeStyle = "#777777";
 			ctx.beginPath();
-			ctx.drawImage(shippic, -25, -25)
+            ctx.arc (ast.pos.x, ast.pos.y, ast.radius, 0, 2 * Math.PI);
 			ctx.closePath();
+            ctx.fill ();
 			ctx.stroke();
-			ctx.translate(-ship.pos.x, -ship.pos.y);
+
+            if (ast.hp / 5 != ast.radius)
+              drawHPBar (ast.radius * 2 + 5
+                        , ast.radius * 2
+                        , 3
+                        , sub (ast.pos, new Vector (ast.radius, ast.radius))
+                        , ast.hp / (ast.radius * 5));
 		}
 
 		function drawAsteroids(as) {
-	
+            as.forEach (drawAsteroid);
 		}
+
+        function drawScore () {
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "10px Consolas";
+            ctx.beginPath ();
+            ctx.fillText (score, 10, 10);
+            ctx.closePath ();
+            ctx.fill ();
+        };
 
 
 
@@ -180,27 +238,111 @@
         function updateLazer (lazer) {
             var p = add (lazer.pos, scale (lazer.vel, delta));
             lazer.pos = new Vector (legalize (width, p.x), legalize (height, p.y));
-            --lazer.strength;
+            lazer.strength -= 2;
         }
 
-        function updateLazers ( ls) {
+        function updateLazers (ls) {
             ls.forEach(function(element) {
                 if (element.strength < 1)
-                    lazers.shift;
+                    lazers.shift ();
                 else updateLazer (element);
             }, this);
         }
 
-        var ship0 = new Ship ( "#00FFFF"
-                             , new Vector (width / 2, height / 2)
-                             , new Vector (0, 0)
-                             , new Vector (0, -1)
-                             , new Vector (0, 0)
-                             , 0
-                             );
+        function updateAsteroid (ast) {
+            var p = add (ast.pos, scale (ast.vel, delta));
+            ast.pos = new Vector (legalize (width, p.x), legalize (height, p.y));
+        };
+
+        function updateAsteroids (as) {
+            as.forEach (function (a) {
+                updateAsteroid (a);
+            }, this);
+        };
+
+
+        function genAsteroid () {
+            let pos = null;
+            do {
+                var pos1 = randVect (Math.sqrt (width * width + height * height));
+                pos = new Vector (legalize (width, pos1.x), legalize (height, pos1.y));
+            } while (distance (pos, ship0.pos) < 40)
+            let vel = randVect (8);
+            return new Asteroid (pos, vel, Math.random () * 20 + 5);
+        };
+
+
+
+        function getAstLazCol (as, ls) {
+            var list = [];
+
+            for (i = 0; i < ls.length; ++i) {
+                for (j = 0; j < as.length; ++j) {
+                    if (distance (ls[i].pos, as[j].pos) < as[j].radius)
+                        list.push ({lindex : i, aindex : j});
+                };
+            };
+
+            return list;
+        };
+
+        function removeAt (list, index) {
+            var nl = [];
+            for (k = 0; k < list.length; ++k)
+                if (k != index)
+                    nl.push (list[k]);
+            return nl;
+        };
+
+        function handleAstLazCol (lind, aind) {
+            asteroids[aind].hp = asteroids[aind].hp - 20;
+            if (asteroids[aind].hp <= 0) {
+                score += Math.round (asteroids[aind].radius) * 10;
+                asteroids = removeAt (asteroids, aind);
+                asteroids.push (genAsteroid ());
+            }
+            lazers = removeAt (lazers, lind);
+        };
+
+        function handleAstLazCols (las) {
+            las.forEach (function (la) {
+                handleAstLazCol (la.lindex, la.aindex);
+            }, this);
+        };
+
+        function getAstShipCol (as, ship) {
+            var list = [];
+
+            for (i = 0; i < as.length; ++i) {
+                if (distance (as[i].pos, ship.pos) < as[i].radius + 12)
+                    list.push (i);
+            };
+
+            return list;
+        };
+
+        function handleAstShipCol (aind, ship) {
+            var rv = sub (asteroids[aind].vel, ship.vel);
+            ship.hp -= length (scale (rv, asteroids[aind].radius / 20));
+            if (ship.hp <= 0)
+                ingame = false;
+        };
+
+        function handleAstShipCols (ainds, ship) {
+            ainds.forEach (function (aind) {
+                handleAstShipCol (aind, ship);
+            }, this);
+        };
+        
         
         screen.onclick = function (event) {
             if (ingame) return;
+
+            asteroids.push (genAsteroid ());
+            asteroids.push (genAsteroid ());
+            asteroids.push (genAsteroid ());
+            asteroids.push (genAsteroid ());
+            asteroids.push (genAsteroid ());
 
             ingame = true;
             clearInterval (timerRef);
@@ -208,16 +350,55 @@
         }
 
 
+        function reset () {
+            asteroids = [];
+            lazers = [];
+            ship0.pos = new Vector (width / 2, height / 2);
+            ship0.vel = new Vector (0, 0);
+            ship0.dir = new Vector (0, -1);
+            ship0.acl = new Vector (0, 0);
+            ship0.asp = 0;
+            ship0.hp  = 100;
+            score = 0;
+        };
 
+        var counter = 0;
 
         function game () {
+            if (counter >= 1000) {
+                asteroids.push (genAsteroid ());
+                counter = 0;
+                if (ship0.hp < 100) {
+                  ship0.hp += 5;
+                  ship0.hp = Math.min (ship0.hp, 100);
+                };
+            };
+
+            if (!ingame) {
+                reset ();
+                return;
+            };
+
             ctx.fillStyle = "#000000";
 			ctx.fillRect(0, 0, width, height);
+
             updateShip (ship0);
             updateLazers (lazers);
+            updateAsteroids (asteroids);
             drawShip (ship0);
             drawLazers (lazers);
-        }
+            drawAsteroids (asteroids);
+
+            drawScore ();
+
+            var alcols = getAstLazCol (asteroids, lazers);
+            var ascols = getAstShipCol (asteroids, ship0);
+
+            handleAstLazCols (alcols);
+            handleAstShipCols (ascols, ship0);
+
+            ++counter;
+        };
 
 
         let canshoot = true;
@@ -230,22 +411,24 @@
                     ship0.acl = scale (ship0.dir, delta);
                     shippic.src = "https://profbrandon.github.io/games/asteroids/shipblue2.png";
                     break;
-                case 40: // Down
-                    ship0.acl = scale (ship0.dir, -delta);
-                    break;
                 case 39: // Right
-                    ship0.asp = 0.1;
+                    ship0.asp = 0.20;
                     break;
                 case 37: // Left
-                    ship0.asp = -0.1;
+                    ship0.asp = -0.20;
                     break;
 				case 32: // Spacebar
 					if (canshoot) {
-                        l = new Lazer("#00AABA"
-                                 , add(ship0.pos, scale (ship0.dir, 18))
+                        l1 = new Lazer("#00AABA"
+                                 , add(ship0.pos, rotate (scale (ship0.dir, 17), -30))
                                  , add (scale (ship0.dir, 12), scale (ship0.dir, dot (ship0.dir, ship0.vel)))
                                  , 100);
-                        lazers.push (l);   
+                        l2 = new Lazer("#00AABA"
+                                 , add(ship0.pos, rotate (scale (ship0.dir, 17), 30))
+                                 , add (scale (ship0.dir, 12), scale (ship0.dir, dot (ship0.dir, ship0.vel)))
+                                 , 100);
+                        lazers.push (l1);
+                        lazers.push (l2);   
                     }
                     canshoot = false;   
             }
@@ -258,9 +441,6 @@
                 case 38: // Up
                     ship0.acl = new Vector (0, 0);
                     shippic.src = "https://profbrandon.github.io/games/asteroids/shipblue.png";
-                    break;
-                case 40: // Down
-                    ship0.acl = new Vector (0, 0);
                     break;
                 case 39: // Right
                     ship0.asp = 0;
