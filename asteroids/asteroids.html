@@ -30,6 +30,28 @@
 		//astpic.src = "file:///C:/Users/bdhar_000/Desktop/github/games/asteroids/asteroid1.png";
 
 
+        function rgSpectrum (n) {
+            if (n < 0.5)
+                return {R : 255, G : Math.round (n / 0.5 * 255), B : 0};
+            else
+                return {R : Math.round ((1 - n) / 0.5 * 255), G : 255, B : 0};
+        };
+
+        function rgSpectToHex (rgb) {
+            var r = rgb.R.toString (16);
+            var g = rgb.G.toString (16);
+            var b = rgb.B.toString (16);
+            if (r.length < 2)
+                r = "0" + r;
+            if (g.length < 2)
+                g = "0" + g;
+            if (b.length < 2)
+                b = "0" + b;
+            return ("#" + r + g + b).toUpperCase ();
+        };
+
+
+
 
         function Vector (x, y){
             this.x = x;
@@ -122,14 +144,14 @@
 
 
         function drawHPBar (vOffset, width, height, pos, percent) {
-            /*ctx.strokeStyle = "#555555";
+            ctx.strokeStyle = "#0A0A0A";
 
             ctx.beginPath ();
             ctx.rect (pos.x - 1, pos.y + vOffset - 1, width + 2, height + 2)
             ctx.closePath ();
-            ctx.stroke ();*/
+            ctx.stroke ();
 
-            ctx.fillStyle = "#00FF00";
+            ctx.fillStyle = rgSpectToHex (rgSpectrum (percent));
 
             ctx.beginPath ();
             ctx.rect (pos.x, pos.y + vOffset, width * percent, height)
@@ -186,11 +208,41 @@
 		function drawAsteroid (ast) {
             ctx.fillStyle = "#AAAAAA";
             ctx.strokeStyle = "#777777";
+
 			ctx.beginPath();
             ctx.arc (ast.pos.x, ast.pos.y, ast.radius, 0, 2 * Math.PI);
-			ctx.closePath();
+            ctx.closePath();
             ctx.fill ();
-			ctx.stroke();
+            ctx.stroke ();
+
+            if (ast.pos.x - ast.radius < 0) {
+                ctx.beginPath();
+                ctx.arc (ast.pos.x + width, ast.pos.y, ast.radius, 0, 2 * Math.PI);
+                ctx.closePath();
+                ctx.fill ();
+                ctx.stroke ();
+            };
+            if (ast.pos.x + ast.radius > width) {
+                ctx.beginPath();
+                ctx.arc (ast.pos.x - width, ast.pos.y, ast.radius, 0, 2 * Math.PI);
+                ctx.closePath();
+                ctx.fill ();
+                ctx.stroke ();
+            };
+            if (ast.pos.y - ast.radius < 0) {
+                ctx.beginPath();
+                ctx.arc (ast.pos.x, ast.pos.y + height, ast.radius, 0, 2 * Math.PI);
+                ctx.closePath();
+                ctx.fill ();
+                ctx.stroke ();
+            };
+            if (ast.pos.y + ast.radius > height) {
+                ctx.beginPath();
+                ctx.arc (ast.pos.x, ast.pos.y - height, ast.radius, 0, 2 * Math.PI);
+                ctx.closePath();
+                ctx.fill ();
+                ctx.stroke ();
+            };
 
             if (ast.hp / 5 != ast.radius)
               drawHPBar (ast.radius * 2 + 5
@@ -208,7 +260,7 @@
             ctx.fillStyle = "#FFFFFF";
             ctx.font = "10px Consolas";
             ctx.beginPath ();
-            ctx.fillText (score, 10, 10);
+            ctx.fillText ("Score: " + score, 10, 10);
             ctx.closePath ();
             ctx.fill ();
         };
@@ -218,9 +270,9 @@
 
         function legalize (max, val) {
 			if (val < -5)
-				return val + max + 5;
-			else if (val > max + 5)
-				return val % max - 5;
+				return val + max;
+			else if (val > max)
+				return val % max;
             else 
                 return val;
         }
@@ -263,12 +315,13 @@
 
         function genAsteroid () {
             let pos = null;
+            let radius = Math.random () * (Math.min (width, height) / 20) + 4;
             do {
                 var pos1 = randVect (Math.sqrt (width * width + height * height));
                 pos = new Vector (legalize (width, pos1.x), legalize (height, pos1.y));
-            } while (distance (pos, ship0.pos) < 40)
-            let vel = randVect (8);
-            return new Asteroid (pos, vel, Math.random () * 20 + 5);
+            } while (distance (pos, ship0.pos) < Math.max (width, height) / 6);
+            let vel = randVect (25 / (Math.sqrt (radius) - 1));
+            return new Asteroid (pos, vel, radius);
         };
 
 
@@ -296,10 +349,10 @@
 
         function handleAstLazCol (lind, aind) {
             asteroids[aind].hp = asteroids[aind].hp - 20;
+            asteroids[aind].vel = add (asteroids[aind].vel, scale (lazers[lind].vel, delta / asteroids[aind].radius ));
             if (asteroids[aind].hp <= 0) {
                 score += Math.round (asteroids[aind].radius) * 10;
                 asteroids = removeAt (asteroids, aind);
-                asteroids.push (genAsteroid ());
             }
             lazers = removeAt (lazers, lind);
         };
@@ -322,8 +375,25 @@
         };
 
         function handleAstShipCol (aind, ship) {
-            var rv = sub (asteroids[aind].vel, ship.vel);
-            ship.hp -= length (scale (rv, asteroids[aind].radius / 20));
+            let A = asteroids[aind];
+            let B = ship;
+
+            let rv = sub (B.vel, A.vel);
+            let normal = normalize (sub (B.pos, A.pos));
+
+            let rvNorm = dot (rv, normal);
+
+            if (rvNorm > 0)
+                return;
+
+            let j = - 1.75 * rvNorm;
+            j /= 1 / (A.radius * A.radius) + 1 / 400;
+
+            let impulse = scale (normal, j);
+            A.vel = sub (A.vel, scale (impulse, 1 / (A.radius * A.radius)));
+            B.vel = add (A.vel, scale (impulse, 1 / 400));
+
+            ship.hp -= length (scale (rv, Math.sqrt (asteroids[aind].radius)));
             if (ship.hp <= 0)
                 ingame = false;
         };
@@ -333,15 +403,50 @@
                 handleAstShipCol (aind, ship);
             }, this);
         };
+
+        function getAstAstCol (as) {
+            var list = [];
+
+            for (i = 0; i < as.length; ++i) {
+                for (j = i + 1; j < as.length; ++j) {
+                    if (length (sub (as[i].pos, as[j].pos)) <= as[i].radius + as[j].radius)
+                        list.push ({a1 : i, a2 : j});
+                };
+            };
+
+            return list;
+        };
+
+        function handleAstAstCol (a1, a2) {
+            let A = asteroids[a1];
+            let B = asteroids[a2];
+
+            let rv = sub (B.vel, A.vel);
+            let normal = normalize (sub (B.pos, A.pos));
+
+            let rvNorm = dot (rv, normal);
+
+            if (rvNorm > 0)
+                return;
+
+            let j = - 1.75 * rvNorm;
+            j /= 1 / (A.radius * A.radius) + 1 / (B.radius * B.radius);
+
+            let impulse = scale (normal, j);
+            A.vel = sub (A.vel, scale (impulse, 1 / (A.radius * A.radius)));
+            B.vel = add (B.vel, scale (impulse, 1 / (B.radius * B.radius)));
+        };
+
+        function handleAstAstCols (as) {
+            as.forEach (function (a) {
+                handleAstAstCol (a.a1, a.a2);
+            }, this);
+        };
         
         
         screen.onclick = function (event) {
             if (ingame) return;
 
-            asteroids.push (genAsteroid ());
-            asteroids.push (genAsteroid ());
-            asteroids.push (genAsteroid ());
-            asteroids.push (genAsteroid ());
             asteroids.push (genAsteroid ());
 
             ingame = true;
@@ -362,14 +467,14 @@
             score = 0;
         };
 
-        var counter = 0;
+        var counter1 = 0;
 
         function game () {
-            if (counter >= 1000) {
+            if (counter1 >= 180) {
                 asteroids.push (genAsteroid ());
-                counter = 0;
+                counter1 = 0;
                 if (ship0.hp < 100) {
-                  ship0.hp += 5;
+                  ++ship0.hp;
                   ship0.hp = Math.min (ship0.hp, 100);
                 };
             };
@@ -385,19 +490,21 @@
             updateShip (ship0);
             updateLazers (lazers);
             updateAsteroids (asteroids);
-            drawShip (ship0);
             drawLazers (lazers);
             drawAsteroids (asteroids);
+            drawShip (ship0);
 
             drawScore ();
 
             var alcols = getAstLazCol (asteroids, lazers);
             var ascols = getAstShipCol (asteroids, ship0);
+            var aacols = getAstAstCol (asteroids);
 
             handleAstLazCols (alcols);
             handleAstShipCols (ascols, ship0);
+            handleAstAstCols (aacols);
 
-            ++counter;
+            ++counter1;
         };
 
 
@@ -428,7 +535,9 @@
                                  , add (scale (ship0.dir, 12), scale (ship0.dir, dot (ship0.dir, ship0.vel)))
                                  , 100);
                         lazers.push (l1);
-                        lazers.push (l2);   
+                        lazers.push (l2);
+
+                        ship0.vel = sub (ship0.vel, scale (add (l1.vel, l2.vel), 0.01));
                     }
                     canshoot = false;   
             }
